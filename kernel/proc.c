@@ -164,6 +164,10 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  if (p->alarm) {
+    kfree(p->alarm);
+    p->alarm = 0;
+  }
 }
 
 // Create a user page table for a given process,
@@ -653,4 +657,52 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+int sigalarm(int ticks, uint64 fn) {
+  struct proc *p;
+  struct alarm *a;
+  p = myproc();
+  if (ticks == 0) {
+    p->alarm->delete = 0;
+    return 0;
+  }
+  if (p->alarm) {
+    kfree(p->alarm);
+    p->alarm = 0;
+  }
+  
+  a = kalloc();
+  if (a == 0)
+    panic("kalloc");
+  
+  a->delete = 0;
+  a->ret = 1;
+  a->ticks = ticks;
+  a->count = ticks;
+  a->user_func = fn;
+  p->alarm = a;
+  return 0;
+}
+
+int sigreturn(){
+  struct proc *p = myproc();
+  // remake the trapframe
+  *p->trapframe = *p->trapframe_saved;
+
+  // free
+  kfree(p->trapframe_saved);
+  p->trapframe_saved = 0;
+
+  // if this alarm have been delete
+  // just remove it
+  if (p->alarm->delete) {
+    kfree(p->alarm);
+    p->alarm = 0;
+  } else {
+    // make it retured
+    p->alarm->ret = 1;
+  }
+
+  return 0;
 }
