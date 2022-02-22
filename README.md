@@ -12,7 +12,7 @@ Empty
 - [x] [Lab syscall: System calls](https://github.com/QRWells/Course-6.S081-2021/tree/syscall)
 - [x] [Lab pgtbl: Page tables](https://github.com/QRWells/Course-6.S081-2021/tree/pgtbl)
 - [x] [Lab traps: Traps](https://github.com/QRWells/Course-6.S081-2021/tree/traps)
-- [ ] Lab cow: Copy-on-write fork
+- [x] [Lab cow: Copy-on-write fork](https://github.com/QRWells/Course-6.S081-2021/tree/cow)
 - [ ] Lab thread: Multithreading
 - [ ] Lab net: Network driver
 - [ ] Lab lock: Parallelism/locking
