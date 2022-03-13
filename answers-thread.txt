@@ -1,0 +1,6 @@
+For instance, there are threads t1 and t2, 
+both threads call put function and assume that key % NBUCKET is heappen to be same in t1 & t2,
+i.e. they are going to insert to the same hash bucket.
+Now, they call insert(key, value, &table[i], table[i]) "at the same time"(one of them starts a little bit earlier, let's assume t1),
+but if t2 starts inserting before the t1 thread returns,
+then the key t1 inserted will be overwritten.
