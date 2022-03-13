@@ -13,7 +13,7 @@ Empty
 - [x] [Lab pgtbl: Page tables](https://github.com/QRWells/Course-6.S081-2021/tree/pgtbl)
 - [x] [Lab traps: Traps](https://github.com/QRWells/Course-6.S081-2021/tree/traps)
 - [x] [Lab cow: Copy-on-write fork](https://github.com/QRWells/Course-6.S081-2021/tree/cow)
-- [ ] Lab thread: Multithreading
+- [x] [Lab thread: Multithreading](https://github.com/QRWells/Course-6.S081-2021/tree/thread)
 - [ ] Lab net: Network driver
 - [ ] Lab lock: Parallelism/locking
 - [ ] Lab fs: File system
