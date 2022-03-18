@@ -14,7 +14,7 @@ Empty
 - [x] [Lab traps: Traps](https://github.com/QRWells/Course-6.S081-2021/tree/traps)
 - [x] [Lab cow: Copy-on-write fork](https://github.com/QRWells/Course-6.S081-2021/tree/cow)
 - [x] [Lab thread: Multithreading](https://github.com/QRWells/Course-6.S081-2021/tree/thread)
-- [ ] Lab net: Network driver
-- [ ] Lab lock: Parallelism/locking
+- [x] [Lab net: Network driver](https://github.com/QRWells/Course-6.S081-2021/tree/net)
+- [x] [Lab lock: Parallelism/locking](https://github.com/QRWells/Course-6.S081-2021/tree/lock)
 - [ ] Lab fs: File system
 - [ ] Lab mmap: Mmap
