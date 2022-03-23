@@ -17,4 +17,4 @@ Empty
 - [x] [Lab net: Network driver](https://github.com/QRWells/Course-6.S081-2021/tree/net)
 - [x] [Lab lock: Parallelism/locking](https://github.com/QRWells/Course-6.S081-2021/tree/lock)
 - [x] [Lab fs: File system](https://github.com/QRWells/Course-6.S081-2021/tree/fs)
-- [ ] Lab mmap: Mmap
+- [x] [Lab mmap: Mmap](https://github.com/QRWells/Course-6.S081-2021/tree/mmap)
