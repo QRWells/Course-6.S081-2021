@@ -5,6 +5,10 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "fcntl.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 
 struct spinlock tickslock;
 uint ticks;
@@ -29,6 +33,58 @@ trapinithart(void)
   w_stvec((uint64)kernelvec);
 }
 
+int
+mmap_fault_handler(int fault_va, int cause) {
+  int i;
+  struct proc* p = myproc();
+  // find vma by fault_va
+  for (i = 0; i < NVMA; ++i)
+    if (p->vma[i].used && p->vma[i].addr <= fault_va &&
+        fault_va <= p->vma[i].addr + p->vma[i].len - 1)
+      break;
+  // cannot find the vma
+  if (i == NVMA) return -1;
+
+  // set permissions
+  int pte_flags = PTE_U;
+  if (p->vma[i].prot & PROT_READ) pte_flags |= PTE_R;
+  if (p->vma[i].prot & PROT_WRITE) pte_flags |= PTE_W;
+  if (p->vma[i].prot & PROT_EXEC) pte_flags |= PTE_X;
+
+  struct file* vf = p->vma[i].vfile;
+  // caused by read
+  if (cause == 13 && vf->readable == 0) return -1;
+  // caused by write
+  if (cause == 15 && vf->writable == 0) return -1;
+
+  void* pa = kalloc();
+  if (pa == 0) return -1;
+  memset(pa, 0, PGSIZE);
+
+  // read file
+  ilock(vf->ip);
+  // compute the offset of current page，in this lab p->vma[i].offset is always 0
+  int offset = p->vma[i].offset + PGROUNDDOWN(fault_va - p->vma[i].addr);
+  int readbytes = readi(vf->ip, 0, (uint64)pa, offset, PGSIZE);
+
+  // read nothing
+  if (readbytes == 0) {
+    iunlock(vf->ip);
+    kfree(pa);
+    return -1;
+  }
+
+  iunlock(vf->ip);
+
+  if (mappages(p->pagetable, PGROUNDDOWN(fault_va), PGSIZE, (uint64)pa,
+               pte_flags) == 0)
+    return 0;
+    
+  // failed to map
+  kfree(pa);
+  return -1;
+}
+
 //
 // handle an interrupt, exception, or system call from user space.
 // called from trampoline.S
@@ -49,12 +105,13 @@ usertrap(void)
   
   // save user program counter.
   p->trapframe->epc = r_sepc();
-  
-  if(r_scause() == 8){
+
+  uint64 cause = r_scause();
+
+  if (cause == 8) {
     // system call
 
-    if(p->killed)
-      exit(-1);
+    if (p->killed) exit(-1);
 
     // sepc points to the ecall instruction,
     // but we want to return to the next instruction.
@@ -65,10 +122,16 @@ usertrap(void)
     intr_on();
 
     syscall();
-  } else if((which_dev = devintr()) != 0){
+  } else if ((which_dev = devintr()) != 0) {
     // ok
+  } else if (cause == 13 || cause == 15) {
+    uint64 fault_va = r_stval();
+    if (PGROUNDUP(p->trapframe->sp) - 1 >= fault_va || fault_va >= p->sz ||
+        mmap_fault_handler(fault_va, cause) != 0)
+      p->killed = 1;
+
   } else {
-    printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+    printf("usertrap(): unexpected scause %p pid=%d\n", cause, p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;
   }

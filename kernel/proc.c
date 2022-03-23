@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "fcntl.h"
 
 struct cpu cpus[NCPU];
 
@@ -140,6 +141,9 @@ found:
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
+  
+  // Set vmas to 0 initalily.
+  memset(&p->vma, 0, sizeof(p->vma));
 
   return p;
 }
@@ -301,6 +305,16 @@ fork(void)
       np->ofile[i] = filedup(p->ofile[i]);
   np->cwd = idup(p->cwd);
 
+  // copy vmas under using.
+  for (i = 0; i < NVMA; ++i) {
+    if (p->vma[i].used) {
+      memmove(&np->vma[i], &p->vma[i], sizeof(p->vma[i]));
+
+      // increment the reference count for a VMA's struct file.
+      filedup(p->vma[i].vfile);
+    }
+  }
+
   safestrcpy(np->name, p->name, sizeof(p->name));
 
   pid = np->pid;
@@ -351,6 +365,18 @@ exit(int status)
       fileclose(f);
       p->ofile[fd] = 0;
     }
+  }
+
+  // Close all mapped files.
+  for (int i = 0; i < NVMA; ++i) {
+    if (p->vma[i].used == 0) continue;
+
+    if (p->vma[i].flags == MAP_SHARED && (p->vma[i].prot & PROT_WRITE) != 0)
+      filewrite(p->vma[i].vfile, p->vma[i].addr, p->vma[i].len);
+
+    fileclose(p->vma[i].vfile);
+    uvmunmap(p->pagetable, p->vma[i].addr, p->vma[i].len / PGSIZE, 1);
+    p->vma[i].used = 0;
   }
 
   begin_op();
